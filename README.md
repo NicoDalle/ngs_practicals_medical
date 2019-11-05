@@ -1,1 +1,3 @@
 # NGS_Practicals_Medical
+
+Zdravstvujstie
