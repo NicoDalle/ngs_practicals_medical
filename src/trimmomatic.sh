@@ -23,16 +23,17 @@ SRR3308972
 for fn in $SRR;
 do
   #Trimmomatic sur des données Paired end
+  	  #On utilise que 7 coeurs sur les 8 de la machine
+  	  #Fichiers d'entrée
+  	  #Fichiers de sortie
+  	  #Fonctions à utiliser et arguments (les mêmes que dans le papier)
+  	  
 	java -jar /softwares/Trimmomatic-0.39/trimmomatic-0.39.jar PE \
-	  #On utilise que 7 coeurs sur les 8 de la machine
 		-threads 7 \
-		#Fichiers d'entrée
 	  sra_data/$fn'_1.fastq' sra_data/$fn'_2.fastq' \
-	  #Fichiers de sortie
 	  data_trimmed/paired/$fn'_trimmed_paired_1.fastq' data_trimmed/unpaired/$fn'_trimmed_unpaired_1.fastq' \
 	  data_trimmed/paired/$fn'_trimmed_paired_2.fastq' data_trimmed/unpaired/$fn'_trimmed_unpaired_2.fastq' \
-	  #Fonctions à utiliser et arguments (les mêmes que dans le papier)
-	  ILLUMINACLIP:adapateur.fa:2:30:10 \
+	  ILLUMINACLIP:adaptateur.fa:2:30:10 \
 	  LEADING:22 SLIDINGWINDOW:4:22 MINLEN:25
 
 done
