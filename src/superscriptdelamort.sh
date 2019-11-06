@@ -21,7 +21,7 @@ for srr in $SRR
 do
 #Télécharge les séquences correspondant aux SRR renseignés avant
 #split-file : séquençage pair-end, les séquences dans les 2 sens sont dans 2 fichiers différents
-fastq-dump $srr -O /home/rstudio/disk/sra_data_raw --split-files -I -X 4
+fastq-dump $srr -O /home/rstudio/disk/sra_data_raw --split-files -I
 
 #Modifie les fichiers texte, NR: row number
 #Change le nom des séquences en SRR..._1/1 et enlève la taille du read
