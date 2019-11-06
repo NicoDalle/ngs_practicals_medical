@@ -4,10 +4,10 @@
 cd /home/rstudio/disk
 
 #Creation des dossiers pour stocker les fichiers nettoyés
-mkdir data_trimmed
+mkdir -p data_trimmed
 cd data_trimmed
-mkdir paired
-mkdir unpaired
+mkdir -p paired
+mkdir -p unpaired
 
 cd ..
 
