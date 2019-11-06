@@ -15,5 +15,6 @@ cd data_qc
 for file in $FileList
 do
 echo $file
+#Execute fastqc sur le fichier renseigné, enregistre le rapport dans data_qc
 fastqc ../sra_data/$file -o .
 done
