@@ -15,7 +15,7 @@ SRR3308972
 ## Run salmon
 
 #Création de l'index à partir de la base de données, taille des k-mères : 25 (on a pas mal de reads assez petits)
-#salmon index -t Hsap_cDNA.fa -i salmon/Hsap_index -k 25
+salmon index -t Hsap_cDNA.fa -i salmon/Hsap_index -k 25
 
 for srr in $SRR :
 do
