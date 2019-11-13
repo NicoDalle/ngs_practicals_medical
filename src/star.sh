@@ -26,7 +26,7 @@ SRR3308972
 
 
 #Génération de l'index du génome humain annoté, avec 7 coeurs
-STAR --runThreadN 1 --runMode genomeGenerate \
+STAR --runThreadN 7 --runMode genomeGenerate \
   --genomeDir star/index \
   --genomeFastaFiles Hsap_chr.fa \
   --sjdbGTFfile Hsap_annotation.gtf \
