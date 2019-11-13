@@ -1,6 +1,6 @@
 #! /bin/bash
 
-cd /home/rstudio/disk
+cd /home/rstudio/disk/
 mkdir -p star/index
 
 #Liste des SRR d'intérêt
@@ -12,12 +12,27 @@ SRR3308971
 SRR3308972
 "
 
+#Nettoyage des données du génome : on ne récupère que les chromosomes entiers
+#Visualisation des scaffols non assemblés en chromosomes dans headers.txt
+#grep ">" Hsap_genome.fa > headers.txt
+#Récupération des headers des chromosomes entiers
+#grep ">" Hsap_genome.fa |grep -v "_" |sed 's/>//g'>chr.txt
+#Extraction des séquences des chromosomes assemblés en entier
+#xargs samtools faidx Hsap_genome.fa < chr.txt> Hsap_chr.fa
+
+#Le fichier Hsap_chr.fa est ensuite utilisé comme base pour l'index
+#Il ne contient que les séquences qui sont bien assemblées
+
+
+
 #Génération de l'index du génome humain annoté, avec 7 coeurs
-STAR --runThreadN 7 --runMode genomeGenerate \
+STAR --runThreadN 1 --runMode genomeGenerate \
   --genomeDir star/index \
-  --genomeFastaFiles Hsap_genome.fa \
+  --genomeFastaFiles Hsap_chr.fa \
   --sjdbGTFfile Hsap_annotation.gtf \
-  --sjdbOverhang 100
+  --sjdbOverhang 100 \
+  --genomeChrBinNbits 18
+
 
 paired=/home/rstudio/disk/data_trimmed/paired
 
