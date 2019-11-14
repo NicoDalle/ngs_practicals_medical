@@ -35,12 +35,13 @@ SRR3308972
 
 
 paired=/home/rstudio/disk/data_trimmed/paired
+star=/home/rstudio/disk/star
 
 for srr in $SRR :
 do
 #Création d'un nouveau répertoire
-mkdir -p star/$srr'_star'
-cd star/$srr'_star'
+mkdir -p $star/$srr'_star'
+cd $star/$srr'_star'
 #Quantification des reads
 STAR --runThreadN 7 --genomeDir /home/rstudio/disk/Corentin/hg38_genome \
   --readFilesIn $paired/$srr'_trimmed_paired_1.fastq' \
