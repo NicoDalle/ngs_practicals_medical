@@ -33,16 +33,25 @@ SRR3308976
 #SRR3308956
 #SRR3308963
 #SRR3308972
+#SRR3308950
+#SRR3308958
+#SRR3308960
+#SRR3308961
+#SRR3308965
+#SRR3308967
+#SRR3308969
+#SRR3308977
+#SRR3308980
 
 for srr in $SRR
 do
 #Télécharge les séquences correspondant aux SRR renseignés avant
 #split-file : séquençage pair-end, les séquences dans les 2 sens sont dans 2 fichiers différents
-fastq-dump $srr -O /home/rstudio/disk/sra_data_raw --split-files -I
+fastq-dump $srr -O /home/rstudio/disk/sra_data --split-files -I
 
 #Copie les fichiers dans le dossier sra_data avant de pouvoir les modifier
-cp /home/rstudio/disk/sra_data_raw/$srr'_1.fastq' $srr'_1.fastq'
-cp /home/rstudio/disk/sra_data_raw/$srr'_2.fastq' $srr'_2.fastq'
+#cp /home/rstudio/disk/sra_data/$srr'_1.fastq' $srr'_1.fastq'
+#cp /home/rstudio/disk/sra_data/$srr'_2.fastq' $srr'_2.fastq'
 
 #Modifie les fichiers texte, NR: row number
 #Change le nom des séquences en SRR..._1/1 et enlève la taille du read
