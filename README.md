@@ -77,13 +77,14 @@ Le contrôle qualité des séquences nettoyées est réalisé avec fastqc et mul
 
 Le transcriptome humain est récupéré depuis ensembl.org/biomart. La version GRCh38.p13 de Ensembl Gene 98 a été utilisée. Le script utilisé est ./ngs_practicals/src/get_cdna.sh. Le transcriptome est enregistré en tant que Hsap_cDNA.fa
 
-# Quantification et mapping des reads sur le trnascriptome avec salmon
+# Quantification et mapping des reads sur le transcriptome avec salmon
 
 Pour cette étape, la fonction salmon a été utilisée à partir des données nettoyées et du transcriptome téléchargé juste avant. Le script est ./ngs_practicals_medical/src/salmon.sh.
 Rq : salmon permet de quantifier des reads de RNAseq sur une banque de cDNA seulement. pour une quantification sur un génome entier, il faut utiliser STAR par exemple (cf plus bas).
 Salmon fonctionne en 2 étapes. D'abord la création d'un index à partir du transcriptome dans le dossier salmon/Hsap_index. Cet index n'a pas besoin d'être regénéré une fois fait. 
 Ensuite, salmon prend les 2 fichiers de séquences de séquencçage nettoyées et appariées et les mappe sur l'index et quantifie le nombre de reads qui se réfèrent au même transcrit. Le type de librairie n'étant pas précisé dans le papier, la foncion -l A est mise, ce qui permet à salmon de voir quel type de librairie est le plus probable d'avoir été utilisé par les auteurs.
 Pour chaque paire de fichiers de séquences, les données sont stockées dans salmon/$srr_paired_quant. 
+/!\ Bien garder le fichier nohup, car il contient le pourcentage de mapping des reads sur le transcriptome de référence, qui normalement doit être au dessus de 70%... Dans notre cas, on tournait plus autour de 15-30%...
 
 # Résultats
 
