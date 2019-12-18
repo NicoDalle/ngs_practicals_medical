@@ -157,3 +157,11 @@ ggplot(pcaData, aes(PC1, PC2, color=time, shape=sex)) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
   coord_fixed()
+
+nous <- read.csv('nous.csv', sep = ' ', h =F)
+intersect(nous, gene_resp)
+ library(compare)
+comparison <- compare(nous, gene_resp,allowAll=TRUE)
+comparison$tM
+
+a <- nous[nous %in% gene_resp]
