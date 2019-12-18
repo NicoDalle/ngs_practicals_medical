@@ -4,28 +4,37 @@ library("readr")
 library(apeglm)
 library("DESeq2",quietly = T)
 library(ggplot2)
-# Location of the data:
+
+#On précise le dossier courant
 setwd("/home/rstudio/disk/DESeq")
 
+#Import des données, condition comporte les métadonnées, us comporte la table de compte produite par Salmon
 condition <- read.table("condition.csv",header = T)
 us=read.table("table_medical.csv")
 
-
-# DE analysis : comparison 1 in the paper / with "us" data
+# DE analysis : comparison 1 in the paper / with "us" data, on prend en compte le facteur "temps" et "patient"
+#Avec us[,condition$type=="responding"], on ne récupère que les niveaux d'expression des patients ayant répondu
 dds <- DESeqDataSetFromMatrix(countData = round(us[,condition$type=="responding"],0),
                               colData = condition[condition$type=="responding",],
                               design = ~ patient + time)
 
-#dds <- DESeq(dds)
+#On enlève les gènes qui ne sont que très très peu exprimés, ceci permettra d'être moins stringent lors de l'analyse des gènes DE
+#Pour les analyses, on met un FDR à 0,05 : 5% des gènes marqués comme DE ne le sont pas. Ceci est obtenu à partir de modèles statistiques
+#En enlevant les gènes presque pas exprimés, on a un peu plus de gènes identifiés comme DE (mais le FDR est toujours le même)
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
-dds$time <- relevel(dds$time, ref = "before") # Ici ce à quoi on va se comparer.
+#On définit la valeur "before" comme étant la référence, on comparera donc les conditions par rapport à la condition "before"
+dds$time <- relevel(dds$time, ref = "before")
 dds <- DESeq(dds)
+dds_resp <- dds
 resultsNames(dds)
+#On shrink les données: on corrige le log change vis-à-vis de du fait que, quand le compte est faible, le log change est artificiellement gonflé
 resLFC <- lfcShrink(dds, coef="time_after_vs_before", type="apeglm")
 resLFC_resp <- resLFC
 
 # 744 DE genes 5% FDR
+
+#On fait le MA plot, pour vérifier la tête des données
 plotMA(resLFC_resp,ylim=c(-4,4))
 maplot <- ggplot(as.data.frame(resLFC_resp),aes(x=log10(baseMean),y=log2FoldChange,color=padj<0.05))+
   geom_point(mapping = aes(size=padj<0.05,alpha=padj<0.05,shape=padj<0.05,fill=padj<0.05))+theme_bw()+theme(legend.position = 'none')+
@@ -33,18 +42,22 @@ maplot <- ggplot(as.data.frame(resLFC_resp),aes(x=log10(baseMean),y=log2FoldChan
   scale_shape_manual(values=c(21,21))+scale_fill_manual(values = c("#999999","#05100e"))+
   scale_color_manual(values=c("#999999","#cc8167"))
 maplot
+
+#On ne sélectionne que les gènes qui sont exprimés différentiellement significativement
 resLFC_resp$padj[is.na(resLFC_resp$padj)] <- 1
 res_resp_sign <- resLFC_resp[resLFC_resp$padj<0.05,]
-res_resp_sign <- res_resp_sign[order(res_resp_sign$pvalue),]
-gene_resp <-row.names(res_resp_sign)
+#Ici on classe les gènes dans l'ordre croissant (ou décroissant) selon le fold change
+res_resp_sign <- res_resp_sign[order(res_resp_sign$log2FoldChange),]
+gene_resp <- row.names(res_resp_sign)
+res_resp_sign2 <- res_resp_sign[order(-res_resp_sign$log2FoldChange),]
+gene_resp2 <- row.names(res_resp_sign2)
 
 #PCA
-
-vsd <- vst(dds, blind=FALSE)
+vsd <- vst(dds_resp, blind=FALSE)
 head(assay(vsd), 3)
 
-#Plotter la PCA en basique, dans l'intgroup, on met tous les facteurs qu'on veut étudier
-plotPCA(vsd, intgroup=c("sex", "type"))
+#Plotter la PCA en basique, dans l'intgroup, on met tous les facteurs qu'on veut étudier, pour regarder s'ils ont un impact sur nos données
+plotPCA(vsd, intgroup=c("sex", "time"))
 
 #Plotter la PCA en joli
 pcaData <- plotPCA(vsd, intgroup=c("sex", "type"), returnData=TRUE)
@@ -66,6 +79,7 @@ keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
 dds$time <- relevel(dds$time, ref = "before") # Ici ce à quoi on va se comparer.
 dds <- DESeq(dds)
+dds_nonresp <- dds
 res <- results(dds)
 resultsNames(dds)
 resLFC <- lfcShrink(dds, coef="time_after_vs_before", type="apeglm")
@@ -84,11 +98,11 @@ resLFC_nonresp[resLFC_nonresp$padj<0.05,]
 
 #PCA
 
-vsd <- vst(dds, blind=FALSE)
+vsd <- vst(dds_nonresp, blind=FALSE)
 head(assay(vsd), 3)
 
 #Plotter la PCA en basique, dans l'intgroup, on met tous les facteurs qu'on veut étudier
-plotPCA(vsd, intgroup=c("sex", "type"))
+plotPCA(vsd, intgroup=c("sex", "time"))
 
 #Plotter la PCA en joli
 pcaData <- plotPCA(vsd, intgroup=c("sex", "type"), returnData=TRUE)
@@ -108,6 +122,7 @@ keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
 dds$time <- relevel(dds$time, ref = "before") # Ici ce à quoi on va se comparer.
 dds <- DESeq(dds)
+dds_before <- dds
 res <- results(dds)
 resultsNames(dds)
 resLFC <- lfcShrink(dds, coef="type_responding_vs_non_responding", type="apeglm")
@@ -128,11 +143,11 @@ resLFC_bef[resLFC_bef$padj<0.05,]
 
 #PCA
 
-vsd <- vst(dds, blind=FALSE)
+vsd <- vst(dds_before, blind=FALSE)
 head(assay(vsd), 3)
 
 #Plotter la PCA en basique, dans l'intgroup, on met tous les facteurs qu'on veut étudier
-plotPCA(vsd, intgroup=c("sex", "time"))
+plotPCA(vsd, intgroup=c("sex", "type"))
 
 #Plotter la PCA en joli
 pcaData <- plotPCA(vsd, intgroup=c("sex", "time"), returnData=TRUE)
