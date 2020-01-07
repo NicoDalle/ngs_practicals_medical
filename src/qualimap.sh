@@ -24,10 +24,10 @@ cd /home/rstudio/disk/star/$srr'_star'
 #On trie le bam par ordre alphabétique des gènes, et pas selon leur position sur le génome
 #-n : on trie par nom -O : type d'extension qu'on veut -o : output -@ : nombre de threads 
 #dernier argument : fichier input
-#samtools sort -n -O bam -o $srr'_sorted.bam' -@ 7 $srr'.bam'
+samtools sort -n -O bam -o $srr'_sorted.bam' -@ 7 $srr'.bam'
 
 
-#Il faut trier les bam pour qualimap
+#On peut ensuite appliquer qualimap sur les fichiers bam triés par ordre alphabétique de gène
 #-bam : fichier bam d'input -gtf : fichier gtf d'annotation du génome -outdir : dossier de sortie
 #-outfile : rapport de sortie -pe : paired end sequencing -s : le bam est trié (obligatoire comme -pe)
 #--java-mem-size : limite la RAM allouée à qualimap, par défaut, il considère qu'il en a plein, quitte à tout faire bugger
@@ -40,8 +40,6 @@ qualimap rnaseq -bam $srr'_sorted.bam' \
   -outfile /home/rsudio/disk/qualimap/$srr'_qualimap'/$srr'_report.html' \
   -pe -s --java-mem-size=20G \
   -p strand-specific-forward -a proportional
-
-echo $srr
 
 done
 

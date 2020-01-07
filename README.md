@@ -60,9 +60,9 @@ Rq : le script fastqc_trimmed.sh permet de faire exactement la même chose, mais
 
 ## Nettoyage des données
 
-Le nettoyage des données de séquençage est réalisé par trimmomatic (script ./ngs_practicals_medical/src/trimmomatic.sh). Pour chaque read, trimmomatic enlève les bases dont la confiance est très faible (avec la fonction SLIDINGWINDOW -> enlève les bases d'une fen^tre glissante si la confiance moyenne de ces bases est en dessous d'une certaine valeur) et les séquences qui ont été trouvées anormalement surreprésentées par fastqc (avec la fonction ILLUMINACLIP). 
-Dans notre cas, seulement les séquences correspondant aux séquences polyA/polyT et les aaptateurs Illumina ont été ajoutés dans le fichier adaptateur.fa.
-Les reads nettoyés qui sont en dessous d'une certaine taille sont enelvés avec la fonction MINLEN et les bases du début du read dont la qualité est inféreure à un certain seuil sont enlevées avec LEADING (prises une par une cette fois, contrairement à SLIDINGWINDOW). 
+Le nettoyage des données de séquençage est réalisé par trimmomatic (script ./ngs_practicals_medical/src/trimmomatic.sh). Pour chaque read, trimmomatic enlève les bases dont la confiance est très faible (avec la fonction SLIDINGWINDOW -> enlève les bases d'une fenêtre glissante si la confiance moyenne de ces bases est en dessous d'une certaine valeur) et les séquences qui ont été trouvées anormalement surreprésentées par fastqc (avec la fonction ILLUMINACLIP). 
+Dans notre cas, seulement les séquences correspondant aux séquences polyA/polyT et les adaptateurs Illumina ont été ajoutés dans le fichier adaptateur.fa.
+Les reads nettoyés qui sont en dessous d'une certaine taille sont enlevés avec la fonction MINLEN et les bases du début du read dont la qualité est inféreure à un certain seuil sont enlevées avec LEADING (prises une par une cette fois, contrairement à SLIDINGWINDOW). 
 Cependant, il se peut que seulement une des deux séquences correpondant au même read ne soit de qualité suffisante pour être conservée. Dans ce cas, ces séquences nettoyées (qui ne sont plus pairées) sont renvoyées dans les fichiers ./data_trimmed/unpaired/$srr_trimmed_unpaired_1.fatsq (ou_2). Ces séquences sont orphelines et ne seront pas utilisées pour la suite. Les séquences nettoyées mais ayant toujours leur séquence correspondante à l'autre bout du read sont renvoyées dans ./data_trimmed/paired/$srr_trimmed_paired_1.fatsq (ou_2).
 
 Les paramètres utilisés ici sont les mêmes que ceux de l'article (sauf la fonction HEADCROP qui a été enlevée).
@@ -80,9 +80,9 @@ Le transcriptome humain est récupéré depuis ensembl.org/biomart. La version G
 # Quantification et mapping des reads sur le transcriptome avec salmon
 
 Pour cette étape, la fonction salmon a été utilisée à partir des données nettoyées et du transcriptome téléchargé juste avant. Le script est ./ngs_practicals_medical/src/salmon.sh.
-Rq : salmon permet de quantifier des reads de RNAseq sur une banque de cDNA seulement. pour une quantification sur un génome entier, il faut utiliser STAR par exemple (cf plus bas).
+Rq : salmon permet de quantifier des reads de RNAseq sur une banque de cDNA seulement. Pour une quantification sur un génome entier, il faut utiliser STAR par exemple (cf plus bas).
 Salmon fonctionne en 2 étapes. D'abord la création d'un index à partir du transcriptome dans le dossier salmon/Hsap_index. Cet index n'a pas besoin d'être regénéré une fois fait. 
-Ensuite, salmon prend les 2 fichiers de séquences de séquencçage nettoyées et appariées et les mappe sur l'index et quantifie le nombre de reads qui se réfèrent au même transcrit. Le type de librairie n'étant pas précisé dans le papier, la foncion -l A est mise, ce qui permet à salmon de voir quel type de librairie est le plus probable d'avoir été utilisé par les auteurs.
+Ensuite, salmon prend les 2 fichiers de séquences de séquençage nettoyées et appariées et les aligne sur l'index et quantifie le nombre de reads qui se réfèrent au même transcrit. Le type de librairie n'étant pas précisé dans le papier, la foncion -l A est mise, ce qui permet à salmon de voir quel type de librairie est le plus probable d'avoir été utilisé par les auteurs.
 Pour chaque paire de fichiers de séquences, les données sont stockées dans salmon/$srr_paired_quant. 
 /!\ Bien garder le fichier nohup, car il contient le pourcentage de mapping des reads sur le transcriptome de référence, qui normalement doit être au dessus de 70%... Dans notre cas, on tournait plus autour de 15-30%...
 
@@ -91,9 +91,21 @@ Pour chaque paire de fichiers de séquences, les données sont stockées dans sa
 Le fichier cmd_info.json fait un récapitulatif de l'analyse qui a été faite. La table est dans quant.sf. Ce fichier comprend plusieurs colonnes : 
   - Name : référence du gène, référence du transcrit, nom du gène
   - Length : longueur du transcrit
-  - EffectiveLength : ?
+  - EffectiveLength : la longueur effective du transcrit telle que modélisée par salmon, à partir de la dsitrbution de la taille des fragments, des biais liés à la séquence et à la teneur en gc. (Ne sera pas utile pour nous...)
   - TPM : transcrits par million : proportion du transcrit parmi les ARN analysés. Ceci permet de prendre en compte le niveau d'expression du gène, la longueur du gène (plus il est long, plus on a de chance d'avoir de reads dessus) et la profondeur du séquençage. Ceci reflète le niveau d'expression normalisé par rapport à la longueur du transcrit et de la profondeur du séquençage. Pas forcément pertinent pour notre étude : ne varie pas si on a une augmentation globale de la quantité d'ARN et le TPM d'un transcrit dont l'expression ne change pas peut changer si tous les autres transcrits sont différemment exprimés.
   - NumReads : Nombre de reads mappés sur ce transcrit. C'est ce que l'on va utiliser par la suite (il faudra cependant corriger ceci par la profodeur du séquençage). Pas besoin de normalisation par la taille du transcrit comme on va comparer l'expression d'un même transcrit dans 2 conditions différentes.
-Enfin, durant que salmon s'exécute, il renvoie les informations de la qualité du mapping en pourcentage pour chaque paire de fichiers de séquences. Attention à bien conserver le nohup quand salmon.sh est exécuté !! Cette qualité du mapping est en fait le nombre de reads que salmon a réussi à mapper sur le transcriptome de référence. Dans notre cas, la qualité du mapping est très faible (entre 15 et 30%), bien en dessous d'une valeur acceptable (au moins 80% dans notre cas : RNAseq sur un transcriptome d'une espèce dont le génome est bien connu et annoté). 
+Enfin, pendant que salmon s'exécute, il renvoie les informations de la qualité du mapping en pourcentage pour chaque paire de fichiers de séquences. Attention à bien conserver le nohup quand salmon.sh est exécuté !! Cette qualité du mapping est en fait le nombre de reads que salmon a réussi à mapper sur le transcriptome de référence. Dans notre cas, la qualité du mapping est très faible (entre 15 et 30%), bien en dessous d'une valeur acceptable (au moins 80% dans notre cas : RNAseq sur un transcriptome d'une espèce dont le génome est bien connu et annoté). 
+
 
 ## Quantification et mapping des reads sur le génome humain
+
+#Téléchargement du génome de référence et de son annotation
+
+#Quantification et mapping des reads sur le génome avec STAR
+
+#Résultats
+
+#Vérification du mapping
+
+Les analyses du mapping sur le génome humain dans sa globalité sont faites pour chaque échantillon avec qualimap. On se sert des fichiers .bam renvoyés par STAR, qu'il faut d'abord classer par ordre alphabétique de gène, et pas par ordre de position sur le chromosome (comme ils sont classés par STAR initialement). Une fois ceci fais, on peut appliquer qualimap, ce qui dit nous donner des informations sur la qualité du mapping des reads sur le génome de référence qui a été fait par STAR. En théorie, on devrait avoir un très bon mapping. 
+Cependant, nous n'avons pas pu obtenir de résultats de qualimap suite à des problèmes de versios de JAVA qui n'étaient pas à jour... 
