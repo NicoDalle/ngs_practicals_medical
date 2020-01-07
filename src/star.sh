@@ -13,6 +13,8 @@ SRR3308972
 "
 
 #Nettoyage des données du génome : on ne récupère que les chromosomes entiers
+#Ce paragraphe de nettoyage des données a été ajouté après des problèmes de génération du génome. 
+#Il ne faut pas en tenir compte si la gnération du génome se passe bien du premier coup.
 #Visualisation des scaffols non assemblés en chromosomes dans headers.txt
 #grep ">" Hsap_genome.fa > headers.txt
 #Récupération des headers des chromosomes entiers
@@ -26,12 +28,12 @@ SRR3308972
 
 
 #Génération de l'index du génome humain annoté, avec 7 coeurs
-#STAR --runThreadN 7 --runMode genomeGenerate \
-#  --genomeDir star/index \
-#  --genomeFastaFiles Hsap_chr.fa \
-#  --sjdbGTFfile Hsap_annotation.gtf \
-#  --sjdbOverhang 100 \
-#  --genomeChrBinNbits 18
+STAR --runThreadN 7 --runMode genomeGenerate \
+  --genomeDir star/index \
+  --genomeFastaFiles Hsap_chr.fa \
+  --sjdbGTFfile Hsap_annotation.gtf \
+  --sjdbOverhang 100 \
+  --genomeChrBinNbits 18
 
 
 paired=/home/rstudio/disk/data_trimmed/paired

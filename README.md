@@ -2,7 +2,7 @@
 
 cd /home/rstudio/disk
 
-Analyse des données de RNAseq des conditions 'Avant traitement chez les patients répondants' et 'Avant traitement chez les patients non répondants' du papier de Urup T. et al, 2017, BMC Cancer.
+Analyse des données de RNAseq des conditions 'Avant traitement chez les patient.e.s répondant.e.s' et 'Avant traitement chez les patient.e.s non répondant.e.s' du papier de Urup T. et al, 2017, BMC Cancer.
 
 ## Exécution des scripts présentés
 
@@ -20,7 +20,7 @@ nohup ./ngs_practicals_medical/src/get_fastq.sh [> <nom_du_fichier_de_stockage_d
 
 Les données sont disponibles sur NCBI GEO au numéro GSE79671.
 Les données pertinentes pour cette comparaison sont celles des tumeurs avant traitement :
-  - non répondant 
+  - non répondant
 "SRR3308950
 SRR3308952
 SRR3308954
@@ -43,7 +43,7 @@ SRR3308978
 SRR3308982
 SRR3308976"
 
-Pour chaque analyse/script, la liste des SRR est rentrée dans la valeur SRR. Cette liste sera parcourue par les boucles for à chaque fois, ce qui permet d'avoir les infos sur tous les patients.
+Pour chaque analyse/script, la liste des SRR est rentrée dans la valeur SRR. Cette liste sera parcourue par les boucles for à chaque fois, ce qui permet d'avoir les infos sur tous les patient.e.s.
 
 Le téléchargement des données se fait depuis le script ./ngs_practicals_medical/src/get_fstq.sh. Les données brutes sont stockées sous la forme $srr_1.fastq (ou _2) dans le dossier sra_raw_data.
 
@@ -96,16 +96,57 @@ Le fichier cmd_info.json fait un récapitulatif de l'analyse qui a été faite. 
   - NumReads : Nombre de reads mappés sur ce transcrit. C'est ce que l'on va utiliser par la suite (il faudra cependant corriger ceci par la profodeur du séquençage). Pas besoin de normalisation par la taille du transcrit comme on va comparer l'expression d'un même transcrit dans 2 conditions différentes.
 Enfin, pendant que salmon s'exécute, il renvoie les informations de la qualité du mapping en pourcentage pour chaque paire de fichiers de séquences. Attention à bien conserver le nohup quand salmon.sh est exécuté !! Cette qualité du mapping est en fait le nombre de reads que salmon a réussi à mapper sur le transcriptome de référence. Dans notre cas, la qualité du mapping est très faible (entre 15 et 30%), bien en dessous d'une valeur acceptable (au moins 80% dans notre cas : RNAseq sur un transcriptome d'une espèce dont le génome est bien connu et annoté). 
 
+Pour essayer de comprendre ce qui a pu se passer lors de la préparation de la librairie, nous avons décidé d'aligner les reads sur le génome humain. Ceci devrait nous permettre d'y voir plus clair. Ceci ne peut pas être fait à partir de Salmon, mais nous allons utiliser un programme qui fonctionne de manière assez similaire sur le principe : STAR.
 
 ## Quantification et mapping des reads sur le génome humain
 
 #Téléchargement du génome de référence et de son annotation
 
+La 38e version du génome humain est téléchargée depuis le site de l'UCSC par le scirpt get_genome.sh. En parallèle, l'annotation de ce génome est aussi téléchargée, ce qui permet d'avoir toutes les informations concernant les séquences sur lesquelles vont se mapper nos reads. Ceci est fait avec le même script.
+
 #Quantification et mapping des reads sur le génome avec STAR
 
-#Résultats
+Le script permettat de faire fonctionner STAR s'appelle star.sh. Il utilise les fichiers .fastq nettoyés après trimmomatic et le génome et son annotation. Dans un premier temps, un index du génome humain est généré avec --runMode genomeGenerate à partir du génome et de son annotation. Malheureusement, nous n'avons pas pu générer l'index par nous-mêmes (même en ne prenant en compte que les chromosomes entiers, ces "améliorations" sont présentées commentées dans le code star.sh). L'index généré par une autre machine a été utilisé, se trouvant dans ./Corentin/hg38_genome. Le mapping et la quantification ont ensuite été réalisées en même temps par STAR en utilisant nos fichiers nettoyés et l'index. Les fichiers de sortie sont sous format .sam, ils sont compressés en .bam avec Samtools.
 
 #Vérification du mapping
 
 Les analyses du mapping sur le génome humain dans sa globalité sont faites pour chaque échantillon avec qualimap. On se sert des fichiers .bam renvoyés par STAR, qu'il faut d'abord classer par ordre alphabétique de gène, et pas par ordre de position sur le chromosome (comme ils sont classés par STAR initialement). Une fois ceci fais, on peut appliquer qualimap, ce qui dit nous donner des informations sur la qualité du mapping des reads sur le génome de référence qui a été fait par STAR. En théorie, on devrait avoir un très bon mapping. 
 Cependant, nous n'avons pas pu obtenir de résultats de qualimap suite à des problèmes de versios de JAVA qui n'étaient pas à jour... 
+
+#Résultats du mapping
+
+Les résultats du mapping par STAR auraient pu être analysés si nous avions eu qualimap... Du coup nous ne savons pas exactement ce qui a pu se passer, mais nous pensons que la dépletion en ARNr ne s'est pas bien faite, ce qui a conduit à une grosse contamination par les ARNr.
+
+##Analyse statistique de la table de compte obtenue par Salmon
+
+Toute l'aalyse statistique est présentée dans un seul script R : deseq.R. Il y a toutes les étapes de l'analyse pour chacune des comparaisons.
+
+#Récupération des métadonnées de chaque patient.e
+
+Pour chaque échantillon, le NCBI donne des informations sur le sexe du patient.e, sa réponse, le numéro de lot de séquençage duquel il fait partie... Ce sont les métadonnées qui sont récupérées directement sur GEO et stockées dans le fichier condition.csv.
+
+Pour les analyses statistiques, nous sommes reparti.e.s chacun.e.s avec l'ensemble des quantifications pour tous les patient.e.s, ce qui nous a permis de faire toutes les comparaisons du papier.
+
+#Analyse d'expression différentielle avec DESeq
+
+QUELS PARAMETRES ONT ETE PRIS EN COMPTE
+
+Pour chaque comparaison, les données des patient.e.s pertinents sont récupérées et rentrées dans DESeq. Les gènes présentant très peu de reads (moins de 10 sur la totalité des patient.e.s, ce chiffre est arbitraire mais permet juste d'éliminer les gènes qui ne sont pas détectés). Ceci nous permet de gagner un peu de puissance lors de l'analyse statistique par DESeq. Ce test nous permet de savoir si le gène est différentiellement exprimé entre le témoin et la condition à analyser. On met un FDR (False Discovery Rate) à 0,05, ce qui veut dire que, d'après des modèles statistiques, 5 % des gènes marqués comme différentiellement exprimés ne le sont pas.
+
+#MA Plot
+
+On vérifie ensuite que les données ont une distribution attendue en traçant le MA plot des données brute set shrinkées (càd corrigées pour les petits comptes, ce qui a tendance à faire exploser la variance). Le MA plot est un graphe qui présente le logarithme de ratio entre les deux conditions en fonction du nombre de compte pour chaque gène. On peut détecter les gènes différentiellement exprimés.
+
+#Récupération et identification des gènes différentiellement exprimés
+
+On récupère les gènes dont la p-value est iférieure à 0,05. On peut ensuite récupérer les gènes sur- et sous-exprimés en triant simplement la liste. Les 5 gènes les plus sur- et sous-exprimés ont été idetifiés en utilisant les identifiants ENSEMBL manuellement. Je pense qu'il doit être possible de pouvoir faire cette identification (ainsi qu'une analyse de Gene Ontology) informatiquement mais nous n'avons pas eu le temps de la réaliser.
+
+#PCA
+
+Pour vérifier si les autres facteurs autre que celui qui est intéressant pour la comparaison jouent un rôle sur la structure des données, des Analyses par Composantes Principales ont été faites en utilisant différentes combinaisons de paramètres (sexe, type, time, patient). Les échantillons venant du même patient.e sont proches. De plus, on peut remarquer des clusters qui ne sont pas expliqués par les facteurs autres. Cependant, le facteur qui nous intéressait n'était pas vraiment responsable du clustering des données (en tout cas au moins pour la comparaison 3 : répondant.e.s et non-répondat.e.s avant triatement, ceci paraît cohérent avec le fait que seulement 5 gènes sont différentiellement exprimés entre ces deux conditions.)
+
+Les analyses sont répétées piur chacune des comparaisons.
+
+##Suite du travail
+
+A partir de la liste des gènes qui sont différentiellement exprimés, il serait intéressant de les identifier et de vois si certains processus biologiques sont touchés par le traitement. Une analyse de Gene Ontology serait utile dans ce cas. Le papier a aussi essayé de reformer des réseaux de gènes interagissant entre eux à partir des données de séquençage. Il pourrait être intéressant de vois si le réseau obtenu dans le papier colle à ce que nous pourrions avoir avec notre analyse.
